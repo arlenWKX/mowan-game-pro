@@ -1,57 +1,80 @@
-import { NextRequest, NextResponse } from "next/server"
+// ============================================
+// Rooms API - 房间列表和创建
+// ============================================
+
+import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
-import { verifyToken } from "@/lib/auth"
 import { generateRoomId } from "@/lib/utils"
+import { 
+  withAuth, 
+  authenticate,
+  successResponse, 
+  validateNumber 
+} from "@/lib/api"
 
-export async function POST(req: NextRequest) {
-  try {
-    const authHeader = req.headers.get("authorization")
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 })
-    }
-
-    const token = authHeader.substring(7)
-    const payload = verifyToken(token)
-    if (!payload) {
-      return NextResponse.json({ error: "无效的令牌" }, { status: 401 })
-    }
-
-    const { max_players = 2 } = await req.json()
-
-    if (max_players < 2 || max_players > 5) {
-      return NextResponse.json(
-        { error: "玩家人数必须是2-5" },
-        { status: 400 }
-      )
-    }
-
-    const roomId = generateRoomId()
-    const room = db.createRoom(roomId, payload.userId, max_players)
-
-    if (!room) {
-      return NextResponse.json(
-        { error: "创建房间失败" },
-        { status: 500 }
-      )
-    }
-
-    // Creator joins room
-    const user = db.getUserById(payload.userId)
-    if (user) {
-      db.joinRoom(roomId, payload.userId, {
-        username: user.username,
-        nickname: user.nickname
-      })
-    }
-
-    return NextResponse.json({
-      room_id: roomId,
-      message: "房间创建成功"
-    }, { status: 201 })
-  } catch (error) {
-    return NextResponse.json(
-      { error: "创建房间失败" },
-      { status: 500 }
-    )
+// Get all rooms or user's rooms
+export const GET = withAuth(async (req) => {
+  const { searchParams } = new URL(req.url)
+  const myRooms = searchParams.get('my') === '1'
+  
+  if (myRooms) {
+    // Get rooms created by current user
+    const auth = authenticate(req)
+    const rooms = db.getRoomsByCreator(auth.userId)
+    return successResponse({ rooms })
   }
-}
+  
+  const rooms = db.getAllRooms()
+  return successResponse({ rooms })
+})
+
+// Create a new room
+export const POST = withAuth(async (req, { auth }) => {
+  const body = await req.json()
+  
+  const maxPlayers = validateNumber(body.max_players, '玩家人数', {
+    min: 2,
+    max: 5,
+    integer: true
+  })
+
+  // Generate unique room ID
+  let roomId: string
+  let attempts = 0
+  const MAX_ATTEMPTS = 10
+  
+  do {
+    roomId = generateRoomId()
+    attempts++
+  } while (db.getRoom(roomId) && attempts < MAX_ATTEMPTS)
+
+  if (attempts >= MAX_ATTEMPTS) {
+    throw new Error('无法生成房间ID，请重试')
+  }
+
+  // Create room
+  const room = db.createRoom(roomId, auth.userId, maxPlayers)
+  if (!room) {
+    throw new Error('创建房间失败')
+  }
+
+  // Creator joins the room
+  const user = db.getUserById(auth.userId)
+  if (!user) {
+    throw new Error('用户不存在')
+  }
+  
+  const joinResult = db.joinRoom(roomId, auth.userId, {
+    username: user.username,
+    nickname: user.nickname
+  })
+  
+  if (!joinResult.success) {
+    // Clean up the room if join failed
+    // Note: In a real database we would use transactions
+    console.error(`[Create Room] Creator failed to join: ${joinResult.error}`)
+    throw new Error(`加入房间失败: ${joinResult.error}`)
+  }
+
+  return successResponse({ room_id: roomId }, '房间创建成功')
+})

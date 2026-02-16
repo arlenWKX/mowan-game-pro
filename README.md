@@ -24,25 +24,54 @@
 
 ## 快速开始
 
-### 安装依赖
-
-```bash
-npm install
-```
-
 ### 开发模式
 
 ```bash
+npm install
 npm run dev
 ```
 
 访问 http://localhost:3000
 
-### 生产构建
+### 生产部署（推荐）
+
+使用提供的管理脚本一键部署：
 
 ```bash
-npm run build
-npm start
+# 1. 克隆项目
+git clone <repository-url> /root/mowan-game-pro
+cd /root/mowan-game-pro
+
+# 2. 安装服务（自动安装依赖、构建、创建 systemd 服务和全局命令）
+./manage.sh install
+
+# 3. 安装完成后，可以在任意位置使用 mowan 命令
+mowan status
+mowan logs
+```
+
+### 管理服务
+
+安装后可以使用 `mowan` 命令管理系统：
+
+```bash
+# 查看状态
+mowan status
+
+# 查看日志
+mowan logs
+
+# 重启服务
+mowan restart
+
+# 健康检查
+mowan health
+
+# 重新构建并应用更新
+mowan build && mowan reload
+
+# 卸载服务
+mowan uninstall
 ```
 
 ## 默认账号
@@ -57,7 +86,29 @@ src/
   components/    # UI组件
   lib/           # 工具函数和数据库
   types/         # TypeScript类型定义
+
+config.ini     # 配置文件（端口、管理员账户等）
+manage.sh      # 服务管理脚本
+start.sh       # 服务启动脚本
 ```
+
+## 配置文件
+
+`config.ini` 用于配置服务参数：
+
+```ini
+[server]
+port=3000
+
+[admin]
+username=admin
+password=admin123
+
+[log]
+level=info
+```
+
+修改配置后需要重启服务生效：`mowan restart`
 
 ## 游戏规则
 

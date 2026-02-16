@@ -1,24 +1,27 @@
-import { NextRequest, NextResponse } from "next/server"
+// ============================================
+// Login API - 用户登录
+// ============================================
+
+import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { verifyPassword, generateToken } from "@/lib/auth"
+import { successResponse, errorResponse, UnauthorizedError } from "@/lib/api"
+import { validateString } from "@/lib/api"
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, password } = await req.json()
+    const body = await req.json()
 
-    if (!username || !password) {
-      return NextResponse.json(
-        { error: "用户名和密码不能为空" },
-        { status: 400 }
-      )
-    }
+    const username = validateString(body.username, '用户名', { min: 3, max: 20 })
+    const password = validateString(body.password, '密码', { min: 6, max: 50 })
 
     const user = db.getUserByUsername(username)
-    if (!user || !verifyPassword(password, user.password)) {
-      return NextResponse.json(
-        { error: "用户名或密码错误" },
-        { status: 401 }
-      )
+    if (!user) {
+      throw new UnauthorizedError('用户名或密码错误')
+    }
+
+    if (!verifyPassword(password, user.password)) {
+      throw new UnauthorizedError('用户名或密码错误')
     }
 
     const token = generateToken({
@@ -27,19 +30,19 @@ export async function POST(req: NextRequest) {
       isAdmin: user.isAdmin
     })
 
-    return NextResponse.json({
-      access_token: token,
+    return successResponse({
+      token,
       user: {
         id: user.id,
         username: user.username,
         nickname: user.nickname,
-        isAdmin: user.isAdmin
+        isAdmin: user.isAdmin,
+        wins: user.wins,
+        losses: user.losses,
+        totalGames: user.totalGames
       }
-    })
+    }, '登录成功')
   } catch (error) {
-    return NextResponse.json(
-      { error: "登录失败" },
-      { status: 500 }
-    )
+    return errorResponse(error as Error)
   }
 }

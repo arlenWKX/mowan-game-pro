@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server"
-import { db } from "@/lib/db"
+// ============================================
+// Leaderboard API - 排行榜
+// ============================================
 
-export async function GET() {
-  try {
-    const leaderboard = db.getLeaderboard(20)
-    return NextResponse.json(leaderboard)
-  } catch (error) {
-    return NextResponse.json(
-      { error: "获取排行榜失败" },
-      { status: 500 }
-    )
-  }
-}
+import { db } from "@/lib/db"
+import { successResponse, withErrorHandler } from "@/lib/api"
+import { NextRequest } from "next/server"
+
+export const GET = withErrorHandler(async (req: NextRequest) => {
+  const { searchParams } = new URL(req.url)
+  const limit = parseInt(searchParams.get('limit') || '20')
+  
+  const leaderboard = db.getLeaderboard(Math.min(limit, 100))
+  return successResponse({ leaderboard })
+})

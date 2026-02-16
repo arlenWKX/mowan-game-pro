@@ -1,36 +1,34 @@
-import { NextRequest, NextResponse } from "next/server"
+// ============================================
+// Room Detail API - 房间详情
+// ============================================
+
+import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
+import { successResponse, errorResponse, NotFoundError } from "@/lib/api"
+import { withErrorHandler } from "@/lib/api"
 
-export async function GET(
+export const GET = withErrorHandler(async (
   req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const room = db.getRoom(params.id)
-    if (!room) {
-      return NextResponse.json(
-        { error: "房间不存在" },
-        { status: 404 }
-      )
-    }
-
-    const players = db.getRoomPlayers(params.id)
-
-    return NextResponse.json({
-      room: {
-        id: room.id,
-        creatorId: room.creatorId,
-        maxPlayers: room.maxPlayers,
-        status: room.status,
-        currentRound: room.currentRound,
-        currentTurn: room.currentTurn
-      },
-      players
-    })
-  } catch (error) {
-    return NextResponse.json(
-      { error: "获取房间信息失败" },
-      { status: 500 }
-    )
+  { params }: { params: unknown }
+) => {
+  const { id } = params as { id: string }
+  const room = db.getRoom(id)
+  if (!room) {
+    throw new NotFoundError('房间不存在')
   }
-}
+
+  const players = db.getRoomPlayers(id)
+
+  return successResponse({
+    room: {
+      id: room.id,
+      creatorId: room.creatorId,
+      maxPlayers: room.maxPlayers,
+      status: room.status,
+      currentRound: room.currentRound,
+      currentTurn: room.currentTurn,
+      createdAt: room.createdAt
+    },
+    players
+  })
+})

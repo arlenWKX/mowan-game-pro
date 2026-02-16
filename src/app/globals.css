@@ -23,7 +23,7 @@
     --border: 217 33% 20%;
     --input: 217 33% 20%;
     --ring: 239 84% 67%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 }
 
@@ -37,32 +37,38 @@
   }
 }
 
-/* Custom animations */
+/* ============================================
+   Animations
+   ============================================ */
+
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 @keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(99, 102, 241, 0.6);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
 }
 
-@keyframes slideIn {
+@keyframes slide-in-right {
   from {
     transform: translateX(100%);
     opacity: 0;
   }
   to {
     transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-top {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
     opacity: 1;
   }
 }
@@ -78,6 +84,27 @@
   }
 }
 
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% { transform: scale(0.9); }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
@@ -87,10 +114,21 @@
 }
 
 .animate-slide-in {
-  animation: slideIn 0.3s ease;
+  animation: slide-in-right 0.3s ease;
 }
 
-/* Game board styles */
+.animate-bounce-in {
+  animation: bounce-in 0.5s ease;
+}
+
+.animate-shake {
+  animation: shake 0.3s ease;
+}
+
+/* ============================================
+   Game Board Styles
+   ============================================ */
+
 .board-cell {
   @apply aspect-square bg-muted rounded-lg border-2 border-border flex items-center justify-center text-2xl font-bold cursor-pointer transition-all duration-200;
 }
@@ -107,7 +145,10 @@
   @apply ring-2 ring-secondary ring-offset-2 ring-offset-background;
 }
 
-/* Number button */
+/* ============================================
+   Number Palette
+   ============================================ */
+
 .number-btn {
   @apply w-12 h-12 rounded-lg border-2 border-border bg-muted text-foreground font-bold transition-all duration-200;
 }
@@ -124,22 +165,30 @@
   @apply opacity-30 cursor-not-allowed;
 }
 
-/* Public piece */
+/* ============================================
+   Game Pieces
+   ============================================ */
+
 .public-piece {
   @apply w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-2xl font-bold shadow-lg;
 }
 
-/* Gradient text */
+/* ============================================
+   Utilities
+   ============================================ */
+
 .gradient-text {
   @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
 }
 
-/* Glass effect */
 .glass {
   @apply bg-background/80 backdrop-blur-lg;
 }
 
-/* Scrollbar */
+/* ============================================
+   Scrollbar
+   ============================================ */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -155,4 +204,53 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-muted-foreground/50;
+}
+
+/* ============================================
+   Selection
+   ============================================ */
+
+::selection {
+  @apply bg-primary/30;
+}
+
+/* ============================================
+   Focus Visible
+   ============================================ */
+
+*:focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+}
+
+/* ============================================
+   Disabled State
+   ============================================ */
+
+button:disabled,
+input:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }
